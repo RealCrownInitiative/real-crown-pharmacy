@@ -1,0 +1,47 @@
+Folder PATH listing
+Volume serial number is 1A53-F18D
+C:.
+³   .env
+³   env test.py
+³   main.py
+³   requirements.txt
+³   structure.txt
+³   
+ÃÄÄÄauth
+³   ³   auth_app.py
+³   ³   login.py
+³   ³   session.py
+³   ³   
+³   ÀÄÄÄ__pycache__
+³           auth_app.cpython-313.pyc
+³           login.cpython-313.pyc
+³           session.cpython-313.pyc
+³           
+ÃÄÄÄcomponents
+³       metrics.py
+³       navbar.py
+³       sidebar.py
+³       
+ÃÄÄÄdashboard
+³   ³   dashboard.py
+³   ³   drug_inventory_dashboard.py
+³   ³   finance.py
+³   ³   inventory.py
+³   ³   summary.py
+³   ³   
+³   ÀÄÄÄ__pycache__
+³           dashboard.cpython-313.pyc
+³           drug_inventory_dashboard.cpython-313.pyc
+³           finance.cpython-313.pyc
+³           inventory.cpython-313.pyc
+³           
+ÃÄÄÄmodules
+³       add_drug_app.py
+³       fetch_data.py
+³       formatters.py
+³       role_check.py
+³       
+ÀÄÄÄutils
+        logger.py
+        validators.py
+        
