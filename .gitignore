@@ -1,0 +1,25 @@
+# Python cache and compiled files
+__pycache__/
+*.pyc
+
+# Environment and secrets
+.env
+
+# System files
+*.log
+*.dat
+*.blf
+*.regtrans-ms
+
+# OS-specific folders (Windows)
+AppData/
+Documents/
+Downloads/
+Pictures/
+Videos/
+Music/
+OneDrive/
+
+# IDE and editor configs
+.vscode/
+.idea/
