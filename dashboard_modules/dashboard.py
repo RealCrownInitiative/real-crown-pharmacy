@@ -94,9 +94,21 @@ def manage_users():
 
     if users:
         df = pd.DataFrame(users)
-        st.dataframe(df[["id", "email", "role", "created_at"]])
+
+        # Show only relevant columns
+        expected_cols = ["id", "name", "email", "role", "verified"]
+        available_cols = [col for col in expected_cols if col in df.columns]
+
+        st.dataframe(df[available_cols])
+
+        # Optional: Role distribution
+        role_counts = df["role"].value_counts()
+        st.markdown("### 🧮 Role Distribution")
+        st.bar_chart(role_counts)
+
     else:
         st.info("No users found.")
+
 
 # ------------------ Main Dashboard Router ------------------ #
 def show_dashboard():
