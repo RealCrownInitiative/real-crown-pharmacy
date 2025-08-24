@@ -3,15 +3,12 @@ import streamlit as st
 def run():
     st.markdown("<h2 style='text-align:center;'>🏠 Welcome to Real Crown Pharmacy Manager</h2>", unsafe_allow_html=True)
 
-    # 🙏 Sliding Bible Verses Preaching Jesus
+    # 🙏 Salvation Prayer Image
     st.markdown("""
     <div style='text-align:center;'>
-        <iframe width="325" height="575" 
-                src="https://www.youtube.com/embed/dQssVLcV_OU" 
-                frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowfullscreen></iframe>
-        <h3 style='color:#4B8BFF;'>📖 Jesus in the Psalms</h3>
-        <p style='font-size:16px;'>Discover how Jesus is revealed through Scripture. Let the Word speak life into your mission.</p>
+        <img src='https://i.pinimg.com/originals/5e/3b/2d/5e3b2d3f8f6e3e6a6c4e6b6e6f6e6e6e.jpg' width='300'>
+        <h3 style='color:#4B8BFF;'>🕊️ Prayer of Salvation</h3>
+        <p style='font-size:16px;'>"Lord Jesus, I believe You died for me and rose again. I accept You as my Lord and Savior. Come into my heart and guide me forever."</p>
     </div>
     """, unsafe_allow_html=True)
 
