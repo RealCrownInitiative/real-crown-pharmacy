@@ -16,7 +16,7 @@ def require_role(allowed_roles):
     if not user:
         st.warning("🔒 Please log in to record a sale.")
         return None
-    if user["role"] not in allowed_roles:
+    if user.get("role") not in allowed_roles:
         st.error("🚫 You do not have permission to record sales.")
         return None
     return user
@@ -29,7 +29,7 @@ def run():
     if not user:
         st.stop()
 
-    user_id = user["id"]
+    user_id = user.get("id")
 
     # 📦 Fetch available drugs
     drug_data = supabase.table("drugs").select("id", "name", "price", "stock_quantity").execute().data
@@ -66,4 +66,5 @@ def run():
 
             st.success(f"✅ Sale recorded successfully. Stock updated to {new_stock} units.")
         except Exception as e:
-            st.error(f"❌ Failed to record sale: {e}")
+            st.error("❌ Failed to record sale.")
+            st.exception(e)
