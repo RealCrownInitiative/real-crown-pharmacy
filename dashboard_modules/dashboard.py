@@ -80,7 +80,7 @@ def view_purchases():
     start = datetime.combine(selected_date, datetime.min.time())
     end = start + timedelta(days=1)
 
-    query = supabase.table("purchases").select("*, drugs(name), users(name)") \
+    query = supabase.table("purchases").select("*, drugs(name)") \
         .gte("created_at", start.isoformat()) \
         .lt("created_at", end.isoformat()) \
         .execute()
@@ -89,7 +89,6 @@ def view_purchases():
     if data:
         df = pd.DataFrame(data)
         df["Drug Name"] = df["drugs"].apply(lambda x: x["name"])
-        df["Entered By"] = df["users"].apply(lambda x: x["name"])
         df["Total Cost"] = df["quantity_purchased"] * df["unit_cost"]
 
         st.dataframe(df[[
@@ -97,13 +96,12 @@ def view_purchases():
             "quantity_purchased",
             "unit_cost",
             "Total Cost",
-            "Entered By",
             "created_at"
         ]])
     else:
         st.info("No purchases recorded on this date.")
 
-
+        
 # ------------------ Manage Users ------------------ #
 def manage_users():
     st.title("👥 Manage Users")
