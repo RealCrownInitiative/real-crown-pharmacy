@@ -161,49 +161,33 @@ def view_reports():
     st.markdown("---")
     st.metric("📊 Net Flow (Sales - Purchases)", f"UGX {net:,.0f}", delta=net)
 
+# ------------------ Manage Users ------------------ #
 import streamlit as st
 import pandas as pd
 from auth.supabase_client import create_user  # Ensure this import is valid
-from auth.supabase_client import supabase     # Add this if supabase isn't already imported
 
 def manage_users():
-    st.markdown("---")  # 🔹 Top separator for visibility
     st.title("👥 Manage Users")
 
     # ------------------ Register New User ------------------ #
     st.markdown("### 🆕 Register New User")
     with st.form("register_user_form"):
-        name = st.text_input("Full Name")
         email = st.text_input("Email")
         password = st.text_input("Password", type="password")
-        role = st.selectbox("Role", ["admin", "pharmacist", "cashier", "procurement", "supervisor"])  # Founder excluded
+        role = st.selectbox("Role", ["admin", "pharmacist", "cashier", "procurement", "supervisor"])
         submitted = st.form_submit_button("Register User")
         if submitted:
-            result = create_user(email=email, password=password, role=role, name=name)
-            if result.get("success"):
+            result = create_user(email=email, password=password, role=role)
+            if result["success"]:
                 st.success("✅ User registered successfully.")
             else:
-                st.error(f"❌ Registration failed: {result.get('error')}")
+                st.error(f"❌ Registration failed: {result['error']}")
 
     st.markdown("---")
 
     # ------------------ View & Manage Existing Users ------------------ #
     query = supabase.table("users").select("*").execute()
     users = query.data
-
-    # ✅ One-time founder creation check
-    founder_exists = any(user["role"] == "founder" for user in users)
-    if not founder_exists:
-        founder_result = create_user(
-            email="realcrowninitiative@gmail.com",
-            password="rc@admin",
-            role="founder",
-            name="Real Crown Initiative"
-        )
-        if founder_result.get("success"):
-            st.success("👑 Founder account created successfully.")
-        else:
-            st.error(f"❌ Failed to create founder: {founder_result.get('error')}")
 
     if not users:
         st.info("No users found.")
@@ -214,13 +198,7 @@ def manage_users():
 
     st.markdown("### 🔧 Admin Controls")
 
-    role_options = ["admin", "pharmacist", "cashier", "procurement", "supervisor"]
-
     for user in users:
-        if user["role"] == "founder":
-            st.markdown(f"👑 **{user['name']}** ({user['email']}) — *Founder* 🔒 Protected")
-            continue  # Skip all controls for founder
-
         col1, col2, col3, col4 = st.columns([3, 2, 2, 3])
         with col1:
             st.write(f"**{user['name']}** ({user['email']}) — *{user['role']}*")
@@ -237,8 +215,9 @@ def manage_users():
                 st.warning(f"{user['name']} deleted.")
 
         with col4:
-            index = role_options.index(user["role"]) if user["role"] in role_options else 0
-            new_role = st.selectbox("Change Role", role_options, index=index, key=f"role_{user['id']}")
+            new_role = st.selectbox("Change Role", ["admin", "pharmacist", "cashier", "procurement", "supervisor"],
+                                    index=["admin", "pharmacist", "cashier", "procurement", "supervisor"].index(user["role"]),
+                                    key=f"role_{user['id']}")
             if new_role != user["role"]:
                 supabase.table("users").update({"role": new_role}).eq("id", user["id"]).execute()
                 st.success(f"{user['name']}'s role updated to {new_role}.")
