@@ -161,7 +161,6 @@ def view_reports():
     st.markdown("---")
     st.metric("📊 Net Flow (Sales - Purchases)", f"UGX {net:,.0f}", delta=net)
 
-# ------------------ Manage Users ------------------ #
 import streamlit as st
 import pandas as pd
 from auth.supabase_client import create_user  # Ensure this import is valid
@@ -174,7 +173,7 @@ def manage_users():
     with st.form("register_user_form"):
         email = st.text_input("Email")
         password = st.text_input("Password", type="password")
-        role = st.selectbox("Role", ["admin", "pharmacist", "cashier", "procurement", "supervisor"])
+        role = st.selectbox("Role", ["admin", "pharmacist", "cashier", "procurement", "supervisor"])  # Founder excluded
         submitted = st.form_submit_button("Register User")
         if submitted:
             result = create_user(email=email, password=password, role=role)
@@ -198,7 +197,13 @@ def manage_users():
 
     st.markdown("### 🔧 Admin Controls")
 
+    role_options = ["admin", "pharmacist", "cashier", "procurement", "supervisor"]
+
     for user in users:
+        if user["role"] == "founder":
+            st.markdown(f"👑 **{user['name']}** ({user['email']}) — *Founder* 🔒 Protected")
+            continue  # Skip all controls for founder
+
         col1, col2, col3, col4 = st.columns([3, 2, 2, 3])
         with col1:
             st.write(f"**{user['name']}** ({user['email']}) — *{user['role']}*")
@@ -215,9 +220,8 @@ def manage_users():
                 st.warning(f"{user['name']} deleted.")
 
         with col4:
-            new_role = st.selectbox("Change Role", ["admin", "pharmacist", "cashier", "procurement", "supervisor"],
-                                    index=["admin", "pharmacist", "cashier", "procurement", "supervisor"].index(user["role"]),
-                                    key=f"role_{user['id']}")
+            index = role_options.index(user["role"]) if user["role"] in role_options else 0
+            new_role = st.selectbox("Change Role", role_options, index=index, key=f"role_{user['id']}")
             if new_role != user["role"]:
                 supabase.table("users").update({"role": new_role}).eq("id", user["id"]).execute()
                 st.success(f"{user['name']}'s role updated to {new_role}.")
