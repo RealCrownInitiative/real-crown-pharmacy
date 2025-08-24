@@ -19,6 +19,13 @@ def require_login():
         return None
     return user
 
+# ------------------ Safe Extractors ------------------ #
+def extract_name(obj):
+    try:
+        return obj.get("name", "Unknown") if isinstance(obj, dict) else "Unknown"
+    except Exception:
+        return "Unknown"
+
 # ------------------ Admin Dashboard ------------------ #
 def admin_dashboard():
     st.title("🧑‍⚕️ Admin Dashboard")
@@ -58,8 +65,8 @@ def view_sales():
     data = query.data
     if data:
         df = pd.DataFrame(data)
-        df["Drug Name"] = df["drugs"].apply(lambda x: x["name"] if isinstance(x, dict) and "name" in x else "Unknown")
-        df["Sold By"] = df["sold_by"].apply(lambda x: x["name"] if isinstance(x, dict) and "name" in x else "Unknown")
+        df["Drug Name"] = df["drugs"].apply(extract_name)
+        df["Sold By"] = df["sold_by"].apply(extract_name)
 
         st.dataframe(df[[
             "Drug Name",
@@ -87,7 +94,7 @@ def view_purchases():
     data = query.data
     if data:
         df = pd.DataFrame(data)
-        df["Drug Name"] = df["drugs"].apply(lambda x: x["name"])
+        df["Drug Name"] = df["drugs"].apply(extract_name)
         df["Total Cost"] = df["quantity_purchased"] * df["unit_cost"]
 
         st.dataframe(df[[
@@ -100,7 +107,6 @@ def view_purchases():
     else:
         st.info("No purchases recorded on this date.")
 
-        
 # ------------------ Manage Users ------------------ #
 def manage_users():
     st.title("👥 Manage Users")
@@ -130,8 +136,6 @@ def manage_users():
             if st.button("🗑️ Delete", key=f"delete_{user['id']}"):
                 supabase.table("users").delete().eq("id", user["id"]).execute()
                 st.warning(f"{user['name']} deleted.")
-
-
 
 # ------------------ Main Dashboard Router ------------------ #
 def show_dashboard():
