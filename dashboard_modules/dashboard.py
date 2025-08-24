@@ -164,6 +164,7 @@ def view_reports():
 import streamlit as st
 import pandas as pd
 from auth.supabase_client import create_user  # Ensure this import is valid
+from auth.supabase_client import supabase     # Add this if supabase isn't already imported
 
 def manage_users():
     st.markdown("---")  # 🔹 Top separator for visibility
@@ -172,16 +173,17 @@ def manage_users():
     # ------------------ Register New User ------------------ #
     st.markdown("### 🆕 Register New User")
     with st.form("register_user_form"):
+        name = st.text_input("Full Name")
         email = st.text_input("Email")
         password = st.text_input("Password", type="password")
         role = st.selectbox("Role", ["admin", "pharmacist", "cashier", "procurement", "supervisor"])  # Founder excluded
         submitted = st.form_submit_button("Register User")
         if submitted:
-            result = create_user(email=email, password=password, role=role)
-            if result["success"]:
+            result = create_user(email=email, password=password, role=role, name=name)
+            if result.get("success"):
                 st.success("✅ User registered successfully.")
             else:
-                st.error(f"❌ Registration failed: {result['error']}")
+                st.error(f"❌ Registration failed: {result.get('error')}")
 
     st.markdown("---")
 
@@ -192,11 +194,16 @@ def manage_users():
     # ✅ One-time founder creation check
     founder_exists = any(user["role"] == "founder" for user in users)
     if not founder_exists:
-        result = create_user(email="realcrowninitiative@gmail.com", password="rc@admin", role="founder")
-        if result["success"]:
+        founder_result = create_user(
+            email="realcrowninitiative@gmail.com",
+            password="rc@admin",
+            role="founder",
+            name="Real Crown Initiative"
+        )
+        if founder_result.get("success"):
             st.success("👑 Founder account created successfully.")
         else:
-            st.error(f"❌ Failed to create founder: {result['error']}")
+            st.error(f"❌ Failed to create founder: {founder_result.get('error')}")
 
     if not users:
         st.info("No users found.")
@@ -235,7 +242,6 @@ def manage_users():
             if new_role != user["role"]:
                 supabase.table("users").update({"role": new_role}).eq("id", user["id"]).execute()
                 st.success(f"{user['name']}'s role updated to {new_role}.")
-
 
 
 # ------------------ Main Dashboard Router ------------------ #
