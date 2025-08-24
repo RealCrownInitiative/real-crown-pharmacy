@@ -170,20 +170,51 @@ def manage_users():
     st.title("👥 Manage Users")
 
     # ------------------ Register New User ------------------ #
-    st.markdown("### 🆕 Register New User")
-    with st.form("register_user_form"):
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
-        role = st.selectbox("Role", ["admin", "pharmacist", "cashier", "procurement", "supervisor"])
-        submitted = st.form_submit_button("Register User")
-        if submitted:
-            result = create_user(email=email, password=password, role=role)
-            if result["success"]:
-                st.success("✅ User registered successfully.")
-            else:
-                st.error(f"❌ Registration failed: {result['error']}")
+  if auth_mode == "Register":
+    st.title("📝 User Registration")
 
+    if not require_admin():
+        st.stop()
+
+    st.markdown("#### 🔐 Admin Access Required")
+    st.markdown("Register a new user with secure credentials and role assignment.")
     st.markdown("---")
+
+    name = st.text_input("Full Name").strip().title()
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
+    role = st.selectbox("Role", ["pharmacist", "admin", "cashier", "procurement", "supervisor"])
+
+    if st.button("Register"):
+        if not name or not email or not password:
+            st.warning("⚠️ Please fill in all fields.")
+        else:
+            hashed_pw = hash_password(password)
+
+            existing = supabase.table("users").select("id").eq("email", email).execute().data
+            if existing:
+                st.error("❌ Email already registered.")
+            else:
+                try:
+                    supabase.table("users").insert({
+                        "name": name,
+                        "email": email,
+                        "password_hash": hashed_pw,
+                        "role": role
+                    }).execute()
+
+                    # 🔍 Audit Log
+                    supabase.table("audit_logs").insert({
+                        "action": "register_user",
+                        "performed_by": st.session_state["user"]["email"],
+                        "details": f"Registered {email} as {role}",
+                        "timestamp": datetime.utcnow().isoformat()
+                    }).execute()
+
+                    st.success("✅ Registration successful! You can now log in.")
+                except Exception as e:
+                    st.error("❌ Something went wrong during registration. Please try again or contact support.")
+
 
     # ------------------ View & Manage Existing Users ------------------ #
     query = supabase.table("users").select("*").execute()
