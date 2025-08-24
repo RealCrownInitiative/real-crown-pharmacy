@@ -11,8 +11,9 @@ import auth_app
 import add_drug_app
 import record_sale_app
 import record_purchase_app
-import summary_dashboard  # Or use summary.run() if preferred
-import home_app  # ✅ New Home module
+import summary_dashboard
+import home_app
+import manage_users_app  # ✅ New module for admin registration
 
 def run():
     st.set_page_config(page_title="Real Crown Pharmacy", layout="wide")
@@ -29,7 +30,8 @@ def run():
         "Record Sale",
         "Record Purchase",
         "Inventory",
-        "Summary"
+        "Summary",
+        "Manage Users"  # ✅ Admin-only
     ]
 
     if "user" in st.session_state:
@@ -41,6 +43,12 @@ def run():
         default_option = st.session_state.get("option", "Home")
         option = st.selectbox("📂 Select Module", modules, index=modules.index(default_option))
         st.session_state["option"] = option
+
+        # 🚪 Logout button
+        if st.button("🔓 Logout"):
+            st.session_state.clear()
+            st.success("You have been logged out.")
+            st.experimental_rerun()
     else:
         option = "Login"
 
@@ -63,8 +71,6 @@ def run():
     # 🚀 Route to selected module
     if option == "Login":
         auth_app.run()
-
-        # ✅ Set redirect flag after successful login
         if "user" in st.session_state:
             st.success("✅ Login successful! Loading Home...")
             st.session_state["redirect_to_home"] = True
@@ -96,6 +102,10 @@ def run():
     elif option == "Summary":
         if require_role(["admin", "supervisor"]):
             summary_dashboard.run()
+
+    elif option == "Manage Users":
+        if require_role(["admin"]):
+            manage_users_app.run()  # ✅ Admin registration logic
 
     # 📌 Footer with branding
     st.markdown("---")
