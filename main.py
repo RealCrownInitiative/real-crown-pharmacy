@@ -81,10 +81,10 @@ def run():
 
     if option == "Login":
         auth_app.run()
-        if st.session_state.user:
+        if st.session_state.user and not st.session_state.redirect_to_home:
             st.success("✅ Login successful! Redirecting to Home...")
             st.session_state.redirect_to_home = True
-            st.experimental_rerun()
+            st.stop()  # ⛔ Prevents further execution, avoids rerun error
 
     elif option == "Home":
         if require_login():
