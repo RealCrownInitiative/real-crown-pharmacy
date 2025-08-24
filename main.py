@@ -1,28 +1,37 @@
 import streamlit as st
 
-# ✅ Import modules from folders
+# ✅ Folder-level imports
 from auth import login, session
 from dashboard_modules import dashboard, drug_inventory_dashboard, finance, inventory, summary
 from components import navbar, sidebar, metrics
 from utils import validators, logger
 
-# ✅ Import modules from root directory
+# ✅ Root-level imports
 import auth_app
 import add_drug_app
 import record_sale_app
 import record_purchase_app
 import summary_dashboard
 import home_app
-import manage_users_app  # ✅ New module for admin registration
+import manage_users_app  # ✅ Admin-only module
 
+# ------------------ App Entry Point ------------------ #
 def run():
     st.set_page_config(page_title="Real Crown Pharmacy", layout="wide")
 
     # 🏷️ Branding Header
-    st.title("💊 Real Crown Pharmacy Management System")
-    st.markdown("Welcome to the central dashboard. Choose an action below:")
+    st.title("💊 RCCLINIC PMS")
+    st.markdown("Choose an action below:")
 
-    # 📂 Navigation options
+    # ------------------ Session Initialization ------------------ #
+    if "user" not in st.session_state:
+        st.session_state.user = None
+    if "option" not in st.session_state:
+        st.session_state.option = "Login"
+    if "redirect_to_home" not in st.session_state:
+        st.session_state.redirect_to_home = False
+
+    # ------------------ Navigation Modules ------------------ #
     modules = [
         "Home",
         "Dashboard",
@@ -31,30 +40,29 @@ def run():
         "Record Purchase",
         "Inventory",
         "Summary",
-        "Manage Users"  # ✅ Admin-only
+        "Manage Users"
     ]
 
-    if "user" in st.session_state:
-        # ✅ Redirect to Home after login
-        if st.session_state.get("redirect_to_home", False):
-            st.session_state["redirect_to_home"] = False
-            st.session_state["option"] = "Home"
+    # ------------------ Authenticated View ------------------ #
+    if st.session_state.user:
+        if st.session_state.redirect_to_home:
+            st.session_state.redirect_to_home = False
+            st.session_state.option = "Home"
 
-        default_option = st.session_state.get("option", "Home")
-        option = st.selectbox("📂 Select Module", modules, index=modules.index(default_option))
-        st.session_state["option"] = option
+        selected = st.selectbox("📂 Select Module", modules, index=modules.index(st.session_state.option))
+        st.session_state.option = selected
 
-        # 🚪 Logout button
+        # 🚪 Logout Button
         if st.button("🔓 Logout"):
             st.session_state.clear()
             st.success("You have been logged out.")
             st.experimental_rerun()
     else:
-        option = "Login"
+        st.session_state.option = "Login"
 
-    # 🔐 Login and Role Checks
+    # ------------------ Access Control ------------------ #
     def require_login():
-        if "user" not in st.session_state:
+        if not st.session_state.user:
             st.warning("🔐 Please log in to access this section.")
             return False
         return True
@@ -62,18 +70,21 @@ def run():
     def require_role(allowed_roles):
         if not require_login():
             return False
-        user = st.session_state.get("user")
+        user = st.session_state.user
         if user["role"] not in allowed_roles:
             st.error("🚫 You do not have permission to access this section.")
             return False
         return True
 
-    # 🚀 Route to selected module
+    # ------------------ Module Routing ------------------ #
+    option = st.session_state.option
+
     if option == "Login":
         auth_app.run()
-        if "user" in st.session_state:
-            st.success("✅ Login successful! Loading Home...")
-            st.session_state["redirect_to_home"] = True
+        if st.session_state.user:
+            st.success("✅ Login successful! Redirecting to Home...")
+            st.session_state.redirect_to_home = True
+            st.experimental_rerun()
 
     elif option == "Home":
         if require_login():
@@ -105,20 +116,25 @@ def run():
 
     elif option == "Manage Users":
         if require_role(["admin"]):
-            manage_users_app.run()  # ✅ Admin registration logic
+            manage_users_app.run()
 
-    # 📌 Footer with branding
+    else:
+        st.error("⚠️ Unknown module selected. Returning to Home.")
+        st.session_state.option = "Home"
+        st.experimental_rerun()
+
+    # ------------------ Footer Branding ------------------ #
     st.markdown("---")
     st.markdown("""
     <div style='text-align: center; font-size: 14px;'>
         Developed by <strong>Sseguya Stephen Jonathan</strong>  
-        <br>📞 Phone: +256788739050  
+        <br>📞 Phone: (+256)788739050   
         <br>🏢 Powered by <strong>Real Crown Cyber House</strong>  
         <br>🎯 Sponsored by <strong>Real Crown Initiative</strong>  
         <br>📧 Email: <a href='mailto:realcrowninitiative@gmail.com'>realcrowninitiative@gmail.com</a>
     </div>
     """, unsafe_allow_html=True)
 
-# 🏁 Run immediately if this is the main file
+# 🏁 Execute if run directly
 if __name__ == "__main__":
     run()
