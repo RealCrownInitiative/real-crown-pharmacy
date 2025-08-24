@@ -21,7 +21,6 @@ def run():
 
     # 🏷️ Branding Header
     st.title("💊 RCCLINIC PMS")
-    st.markdown("Choose an action below:")
 
     # ------------------ Session Initialization ------------------ #
     if "user" not in st.session_state:
@@ -51,12 +50,6 @@ def run():
 
         selected = st.selectbox("📂 Select Module", modules, index=modules.index(st.session_state.option))
         st.session_state.option = selected
-
-        # 🚪 Logout Button
-        if st.button("🔓 Logout"):
-            st.session_state.clear()
-            st.success("You have been logged out.")
-            st.experimental_rerun()
     else:
         st.session_state.option = "Login"
 
@@ -84,7 +77,7 @@ def run():
         if st.session_state.user and not st.session_state.redirect_to_home:
             st.success("✅ Login successful! Redirecting to Home...")
             st.session_state.redirect_to_home = True
-            st.stop()  # ⛔ Prevents further execution, avoids rerun error
+            st.stop()
 
     elif option == "Home":
         if require_login():
@@ -122,6 +115,14 @@ def run():
         st.error("⚠️ Unknown module selected. Returning to Home.")
         st.session_state.option = "Home"
         st.experimental_rerun()
+
+    # ------------------ Logout Button (Moved Below) ------------------ #
+    if st.session_state.user:
+        st.markdown("---")
+        if st.button("🔓 Logout"):
+            st.session_state.clear()
+            st.success("You have been logged out.")
+            st.experimental_rerun()
 
     # ------------------ Footer Branding ------------------ #
     st.markdown("---")
