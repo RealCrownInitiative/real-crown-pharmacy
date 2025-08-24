@@ -107,6 +107,60 @@ def view_purchases():
     else:
         st.info("No purchases recorded on this date.")
 
+# ------------------ Summary Reports ------------------ #
+def view_reports():
+    st.subheader("📊 Summary Reports")
+    report_type = st.selectbox("Choose report type", ["Daily", "Weekly", "Monthly"])
+
+    if report_type == "Daily":
+        selected_date = st.date_input("Select date for daily summary")
+        start = datetime.combine(selected_date, datetime.min.time())
+        end = start + timedelta(days=1)
+        label = selected_date.strftime("%B %d, %Y")
+
+    elif report_type == "Weekly":
+        selected_week = st.date_input("Select start date of week")
+        start = datetime.combine(selected_week, datetime.min.time())
+        end = start + timedelta(days=7)
+        label = f"Week of {selected_week.strftime('%B %d, %Y')}"
+
+    elif report_type == "Monthly":
+        selected_month = st.date_input("Select any date in the month")
+        start = datetime(selected_month.year, selected_month.month, 1)
+        if selected_month.month == 12:
+            end = datetime(selected_month.year + 1, 1, 1)
+        else:
+            end = datetime(selected_month.year, selected_month.month + 1, 1)
+        label = selected_month.strftime("%B %Y")
+
+    # 🔹 Fetch Sales
+    sales_query = supabase.table("sales").select("total_price") \
+        .gte("date_sold", start.isoformat()) \
+        .lt("date_sold", end.isoformat()) \
+        .execute()
+    sales_data = sales_query.data
+    total_sales = sum(item["total_price"] for item in sales_data) if sales_data else 0
+
+    # 🔹 Fetch Purchases
+    purchase_query = supabase.table("purchases").select("quantity_purchased", "unit_cost") \
+        .gte("created_at", start.isoformat()) \
+        .lt("created_at", end.isoformat()) \
+        .execute()
+    purchase_data = purchase_query.data
+    total_purchases = sum(item["quantity_purchased"] * item["unit_cost"] for item in purchase_data) if purchase_data else 0
+
+    # 📋 Display Summary
+    st.markdown(f"### 📅 Summary for {label}")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("💰 Total Sales", f"UGX {total_sales:,.0f}")
+    with col2:
+        st.metric("📦 Total Purchases", f"UGX {total_purchases:,.0f}")
+
+    net = total_sales - total_purchases
+    st.markdown("---")
+    st.metric("📊 Net Flow (Sales - Purchases)", f"UGX {net:,.0f}", delta=net)
+
 # ------------------ Manage Users ------------------ #
 def manage_users():
     st.title("👥 Manage Users")
@@ -171,8 +225,7 @@ def show_dashboard():
 
     elif selection == "Reports":
         if role in ["admin", "supervisor"]:
-            st.title("📊 Reports")
-            st.info("Report module coming soon... 🚧")
+            view_reports()
         else:
             st.error("🚫 You do not have permission to view reports.")
 
