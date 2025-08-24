@@ -167,33 +167,32 @@ import pandas as pd
 from auth.supabase_client import create_user
 from auth.supabase_client import supabase  # ✅ Ensure supabase is accessible
 
-FOUNDER_EMAIL = "your.email@example.com"  # 🔐 Replace with your actual founder email
+FOUNDER_EMAIL = "realcrowninitiative@gmail.com"  # 🔐 Replace with your actual founder email
 
 def manage_users():
     st.title("👥 Manage Users")
 
     # ------------------ Register New User ------------------ #
-    st.markdown("### 🆕 Register New User")
-    with st.form("register_user_form"):
-        name = st.text_input("Full Name")
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
-        role = st.selectbox("Role", [
-            "admin", "pharmacist", "cashier", "nurse", "midwife",
-            "lab_tech", "doctor", "procurement", "receptionist", "supervisor"
-        ])
-        submitted = st.form_submit_button("Register User")
-        if submitted:
-            if not name or not email or not password:
-                st.warning("🚨 All fields are required.")
+st.markdown("### 🆕 Register New User")
+with st.form("register_user_form"):
+    name = st.text_input("Full Name")  # ✅ This was missing before
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
+    role = st.selectbox("Role", [
+        "admin", "pharmacist", "cashier", "nurse", "midwife",
+        "lab_tech", "doctor", "procurement", "receptionist", "supervisor"
+    ])
+    submitted = st.form_submit_button("Register User")
+    if submitted:
+        if not name or not email or not password:
+            st.warning("🚨 All fields are required.")
+        else:
+            result = create_user(name=name, email=email, password=password, role=role)
+            if result["success"]:
+                st.success("✅ User registered successfully.")
             else:
-                result = create_user(name=name, email=email, password=password, role=role)
-                if result["success"]:
-                    st.success("✅ User registered successfully.")
-                else:
-                    st.error(f"❌ Registration failed: {result['error']}")
+                st.error(f"❌ Registration failed: {result['error']}")
 
-    st.markdown("---")
 
     # ------------------ View & Manage Existing Users ------------------ #
     query = supabase.table("users").select("*").execute()
