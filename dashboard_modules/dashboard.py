@@ -162,9 +162,30 @@ def view_reports():
     st.metric("📊 Net Flow (Sales - Purchases)", f"UGX {net:,.0f}", delta=net)
 
 # ------------------ Manage Users ------------------ #
+import streamlit as st
+import pandas as pd
+from auth.supabase_client import create_user  # Ensure this import is valid
+
 def manage_users():
     st.title("👥 Manage Users")
 
+    # ------------------ Register New User ------------------ #
+    st.markdown("### 🆕 Register New User")
+    with st.form("register_user_form"):
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+        role = st.selectbox("Role", ["admin", "pharmacist", "cashier", "procurement", "supervisor"])
+        submitted = st.form_submit_button("Register User")
+        if submitted:
+            result = create_user(email=email, password=password, role=role)
+            if result["success"]:
+                st.success("✅ User registered successfully.")
+            else:
+                st.error(f"❌ Registration failed: {result['error']}")
+
+    st.markdown("---")
+
+    # ------------------ View & Manage Existing Users ------------------ #
     query = supabase.table("users").select("*").execute()
     users = query.data
 
@@ -178,18 +199,29 @@ def manage_users():
     st.markdown("### 🔧 Admin Controls")
 
     for user in users:
-        col1, col2, col3 = st.columns([3, 2, 2])
+        col1, col2, col3, col4 = st.columns([3, 2, 2, 3])
         with col1:
             st.write(f"**{user['name']}** ({user['email']}) — *{user['role']}*")
+
         with col2:
             verify_toggle = st.checkbox("Verified", value=user["verified"], key=f"verify_{user['id']}")
             if verify_toggle != user["verified"]:
                 supabase.table("users").update({"verified": verify_toggle}).eq("id", user["id"]).execute()
                 st.success(f"{user['name']} verification updated.")
+
         with col3:
             if st.button("🗑️ Delete", key=f"delete_{user['id']}"):
                 supabase.table("users").delete().eq("id", user["id"]).execute()
                 st.warning(f"{user['name']} deleted.")
+
+        with col4:
+            new_role = st.selectbox("Change Role", ["admin", "pharmacist", "cashier", "procurement", "supervisor"],
+                                    index=["admin", "pharmacist", "cashier", "procurement", "supervisor"].index(user["role"]),
+                                    key=f"role_{user['id']}")
+            if new_role != user["role"]:
+                supabase.table("users").update({"role": new_role}).eq("id", user["id"]).execute()
+                st.success(f"{user['name']}'s role updated to {new_role}.")
+
 
 # ------------------ Main Dashboard Router ------------------ #
 def show_dashboard():
