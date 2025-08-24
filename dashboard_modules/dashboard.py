@@ -1,23 +1,28 @@
 import streamlit as st
 import pandas as pd
-from supabase import create_client, Client
-
-# ------------------ Supabase Setup ------------------ #
 import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
+# ------------------ Supabase Setup ------------------ #
 load_dotenv()
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
 
+# ------------------ Role Check Helper ------------------ #
+def require_login():
+    user = st.session_state.get("user")
+    if not user:
+        st.error("🔐 Access denied. Please log in.")
+        return None
+    return user
 
 # ------------------ Admin Dashboard ------------------ #
 def admin_dashboard():
     st.title("🧑‍⚕️ Admin Dashboard")
-    st.markdown("Welcome to the admin dashboard. Here you can:")
     st.markdown("""
+    Welcome to the admin dashboard. Here you can:
     - 👥 Manage users  
     - 📦 Oversee inventory  
     - 📊 View system reports  
@@ -28,8 +33,8 @@ def admin_dashboard():
 # ------------------ Pharmacist Dashboard ------------------ #
 def pharmacist_dashboard():
     st.title("💊 Pharmacist Dashboard")
-    st.markdown("Welcome to the pharmacist dashboard. Here you can:")
     st.markdown("""
+    Welcome to the pharmacist dashboard. Here you can:
     - 🧾 View prescriptions  
     - 💉 Dispense medications  
     - 📦 Track stock levels  
@@ -63,14 +68,6 @@ def view_purchases():
     else:
         st.info("No purchases recorded on this date.")
 
-# ------------------ Role Check Helper ------------------ #
-def require_login():
-    user = st.session_state.get("user")
-    if not user:
-        st.error("🔐 Access denied. Please log in.")
-        return None
-    return user
-
 # ------------------ Main Dashboard Router ------------------ #
 def show_dashboard():
     user = require_login()
@@ -80,7 +77,9 @@ def show_dashboard():
     role = user["role"]
 
     st.sidebar.title("🔍 Navigation")
-    selection = st.sidebar.radio("Choose a section:", ["Dashboard", "Reports", "Inventory", "Sales", "Purchases"])
+    selection = st.sidebar.radio("Choose a section:", [
+        "Dashboard", "Reports", "Inventory", "Sales", "Purchases"
+    ])
 
     if selection == "Dashboard":
         if role == "admin":
