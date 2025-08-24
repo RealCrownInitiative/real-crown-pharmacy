@@ -85,6 +85,19 @@ def view_purchases():
     else:
         st.info("No purchases recorded on this date.")
 
+# ------------------ Manage Users ------------------ #
+def manage_users():
+    st.title("👥 Manage Users")
+
+    query = supabase.table("users").select("*").execute()
+    users = query.data
+
+    if users:
+        df = pd.DataFrame(users)
+        st.dataframe(df[["id", "email", "role", "created_at"]])
+    else:
+        st.info("No users found.")
+
 # ------------------ Main Dashboard Router ------------------ #
 def show_dashboard():
     user = require_login()
@@ -94,9 +107,14 @@ def show_dashboard():
     role = user["role"]
 
     st.sidebar.title("🔍 Navigation")
-    selection = st.sidebar.radio("Choose a section:", [
-        "Dashboard", "Reports", "Sales", "Purchases"
-    ])
+    if role == "admin":
+        selection = st.sidebar.radio("Choose a section:", [
+            "Dashboard", "Manage Users", "Reports", "Sales", "Purchases"
+        ])
+    else:
+        selection = st.sidebar.radio("Choose a section:", [
+            "Dashboard", "Sales", "Purchases"
+        ])
 
     if selection == "Dashboard":
         if role == "admin":
@@ -105,6 +123,12 @@ def show_dashboard():
             pharmacist_dashboard()
         else:
             st.warning("Unknown role. Please contact system administrator.")
+
+    elif selection == "Manage Users":
+        if role == "admin":
+            manage_users()
+        else:
+            st.error("🚫 You do not have permission to manage users.")
 
     elif selection == "Reports":
         if role in ["admin", "supervisor"]:
