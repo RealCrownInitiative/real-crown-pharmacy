@@ -12,6 +12,7 @@ import add_drug_app
 import record_sale_app
 import record_purchase_app
 import summary_dashboard  # Or use summary.run() if preferred
+import home_app  # ✅ New Home module
 
 def run():
     st.set_page_config(page_title="Real Crown Pharmacy", layout="wide")
@@ -21,15 +22,18 @@ def run():
     st.markdown("Welcome to the central dashboard. Choose an action below:")
 
     # 📂 Navigation options
-    option = st.selectbox("📂 Select Module", [
-        "Login",
-        "Dashboard",
-        "Add Drug",
-        "Record Sale",
-        "Record Purchase",
-        "Inventory",
-        "Summary"
-    ])
+    if "user" in st.session_state:
+        option = st.selectbox("📂 Select Module", [
+            "Home",
+            "Dashboard",
+            "Add Drug",
+            "Record Sale",
+            "Record Purchase",
+            "Inventory",
+            "Summary"
+        ])
+    else:
+        option = "Login"
 
     # 🔐 Login and Role Checks
     def require_login():
@@ -50,10 +54,17 @@ def run():
     # 🚀 Route to selected module
     if option == "Login":
         auth_app.run()
+        if "user" in st.session_state:
+            st.success("✅ Login successful! Redirecting to Home...")
+            st.experimental_rerun()
+
+    elif option == "Home":
+        if require_login():
+            home_app.run()
 
     elif option == "Dashboard":
         if require_role(["admin", "supervisor"]):
-            dashboard.run()  # ✅ This now reflects your updated dashboard.py logic
+            dashboard.run()
 
     elif option == "Add Drug":
         if require_role(["pharmacist", "admin"]):
