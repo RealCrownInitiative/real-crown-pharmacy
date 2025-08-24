@@ -1,5 +1,5 @@
 import streamlit as st
-from auth.supabase_client import create_user  # Adjust path as needed
+from auth.supabase_client import create_user
 
 def run():
     st.subheader("👥 Register New User")
