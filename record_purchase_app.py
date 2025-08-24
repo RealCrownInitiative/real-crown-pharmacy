@@ -2,9 +2,9 @@ import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
 import streamlit as st
-from datetime import datetime
+from datetime import datetime, date
 
-# Load environment variables
+# 🌍 Load environment variables
 load_dotenv()
 url = os.getenv("SUPABASE_URL")
 key = os.getenv("SUPABASE_KEY")
@@ -54,6 +54,7 @@ def run():
 
     quantity_purchased = st.number_input("📦 Quantity Purchased", min_value=1)
     unit_cost = st.number_input("💵 Unit Cost (UGX)", min_value=0)
+    selected_date = st.date_input("🗓️ Purchase Date", value=date.today())
 
     # ✅ Submission logic
     if st.button("📦 Record Purchase") and typed_supplier_name and unit_cost > 0:
@@ -76,7 +77,8 @@ def run():
                 "quantity_purchased": quantity_purchased,
                 "unit_cost": unit_cost,
                 "entered_by": user_id,
-                "date_purchased": datetime.now().isoformat()
+                "created_at": datetime.now().isoformat(),         # Timestamp of entry
+                "date_purchased": selected_date.isoformat()       # Actual purchase date
             }
             supabase.table("purchases").insert(purchase).execute()
 
