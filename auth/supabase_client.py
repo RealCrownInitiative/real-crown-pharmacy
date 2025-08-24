@@ -6,7 +6,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-def create_user(email, password, role, name):
+def create_user(email, password, role):
     try:
         # 🔐 Create user in Supabase Auth
         response = supabase.auth.sign_up({
@@ -14,14 +14,12 @@ def create_user(email, password, role, name):
             "password": password
         })
 
-        # 🗂️ Add user to public.users table with name and role
+        # 🗂️ Add role to public.users table (optional)
         user_id = response.user.id
         supabase.table("users").insert({
             "id": user_id,
             "email": email,
-            "role": role,
-            "name": name,
-            "verified": False
+            "role": role
         }).execute()
 
         return {"success": True}
