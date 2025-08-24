@@ -58,8 +58,8 @@ def view_sales():
     data = query.data
     if data:
         df = pd.DataFrame(data)
-        df["Drug Name"] = df["drugs"].apply(lambda x: x["name"])
-        df["Sold By"] = df["sold_by"].apply(lambda x: x["name"])
+        df["Drug Name"] = df["drugs"].apply(lambda x: x["name"] if isinstance(x, dict) and "name" in x else "Unknown")
+        df["Sold By"] = df["sold_by"].apply(lambda x: x["name"] if isinstance(x, dict) and "name" in x else "Unknown")
 
         st.dataframe(df[[
             "Drug Name",
@@ -70,7 +70,6 @@ def view_sales():
         ]])
     else:
         st.info("No sales recorded on this date.")
-
 
 # ------------------ Purchases Viewer ------------------ #
 def view_purchases():
