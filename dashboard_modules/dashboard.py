@@ -162,60 +162,63 @@ def view_reports():
     st.metric("📊 Net Flow (Sales - Purchases)", f"UGX {net:,.0f}", delta=net)
 
 # ------------------ Manage Users ------------------ #
+
 import streamlit as st
 import pandas as pd
-from auth.supabase_client import create_user  # Ensure this import is valid
+from datetime import datetime
+from auth.supabase_client import supabase, hash_password  # Ensure these are exposed
+from utils.auth_helpers import require_admin  # Adjust path as needed
 
-def manage_users():
+def manage_users(auth_mode="Register"):
     st.title("👥 Manage Users")
 
     # ------------------ Register New User ------------------ #
-  if auth_mode == "Register":
-    st.title("📝 User Registration")
+    if auth_mode == "Register":
+        st.subheader("📝 User Registration")
 
-    if not require_admin():
-        st.stop()
+        if not require_admin():
+            st.error("🔐 Admin access required to register users.")
+            st.stop()
 
-    st.markdown("#### 🔐 Admin Access Required")
-    st.markdown("Register a new user with secure credentials and role assignment.")
-    st.markdown("---")
+        st.markdown("Register a new user with secure credentials and role assignment.")
+        st.markdown("---")
 
-    name = st.text_input("Full Name").strip().title()
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
-    role = st.selectbox("Role", ["pharmacist", "admin", "cashier", "procurement", "supervisor"])
+        name = st.text_input("Full Name").strip().title()
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+        role = st.selectbox("Role", ["pharmacist", "admin", "cashier", "procurement", "supervisor"])
 
-    if st.button("Register"):
-        if not name or not email or not password:
-            st.warning("⚠️ Please fill in all fields.")
-        else:
-            hashed_pw = hash_password(password)
-
-            existing = supabase.table("users").select("id").eq("email", email).execute().data
-            if existing:
-                st.error("❌ Email already registered.")
+        if st.button("Register"):
+            if not name or not email or not password:
+                st.warning("⚠️ Please fill in all fields.")
             else:
-                try:
-                    supabase.table("users").insert({
-                        "name": name,
-                        "email": email,
-                        "password_hash": hashed_pw,
-                        "role": role
-                    }).execute()
+                hashed_pw = hash_password(password)
 
-                    # 🔍 Audit Log
-                    supabase.table("audit_logs").insert({
-                        "action": "register_user",
-                        "performed_by": st.session_state["user"]["email"],
-                        "details": f"Registered {email} as {role}",
-                        "timestamp": datetime.utcnow().isoformat()
-                    }).execute()
+                existing = supabase.table("users").select("id").eq("email", email).execute().data
+                if existing:
+                    st.error("❌ Email already registered.")
+                else:
+                    try:
+                        supabase.table("users").insert({
+                            "name": name,
+                            "email": email,
+                            "password_hash": hashed_pw,
+                            "role": role,
+                            "verified": False
+                        }).execute()
 
-                    st.success("✅ Registration successful! You can now log in.")
-                except Exception as e:
-                    st.error("❌ Something went wrong during registration. Please try again or contact support.")
+                        # 🔍 Audit Log
+                        supabase.table("audit_logs").insert({
+                            "action": "register_user",
+                            "performed_by": st.session_state["user"]["email"],
+                            "details": f"Registered {email} as {role}",
+                            "timestamp": datetime.utcnow().isoformat()
+                        }).execute()
 
-
+                        st.success("✅ Registration successful! You can now log in.")
+                    except Exception as e:
+                        st.error(f"❌ Registration failed: {str(e)}")
+                        
     # ------------------ View & Manage Existing Users ------------------ #
     query = supabase.table("users").select("*").execute()
     users = query.data
