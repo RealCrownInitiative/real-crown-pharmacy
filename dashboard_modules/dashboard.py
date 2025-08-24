@@ -24,8 +24,7 @@ def admin_dashboard():
     st.title("🧑‍⚕️ Admin Dashboard")
     st.markdown("""
     Welcome to the admin dashboard. Here you can:
-    - 👥 Manage users  
-    - 📦 Oversee inventory  
+    - 👥 Manage users   
     - 📊 View system reports  
     - 🧾 View sales and purchases  
     """)
@@ -43,7 +42,7 @@ def pharmacist_dashboard():
     """)
     st.markdown("---")
 
-# ------------------ Sales Viewer (Fixed Date Filtering) ------------------ #
+# ------------------ Sales Viewer ------------------ #
 def view_sales():
     st.subheader("🧾 Sales Records")
     selected_date = st.date_input("Select date to view sales")
@@ -81,7 +80,8 @@ def view_purchases():
     if data:
         df = pd.DataFrame(data)
         df["Drug Name"] = df["drugs"].apply(lambda x: x["name"])
-        st.dataframe(df[["Drug Name", "quantity_purchased", "created_at"]])
+        df["Total Cost"] = df["quantity_purchased"] * df["unit_cost"]
+        st.dataframe(df[["Drug Name", "quantity_purchased", "unit_cost", "Total Cost", "created_at"]])
     else:
         st.info("No purchases recorded on this date.")
 
