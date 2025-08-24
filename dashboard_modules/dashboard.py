@@ -166,6 +166,7 @@ import pandas as pd
 from auth.supabase_client import create_user  # Ensure this import is valid
 
 def manage_users():
+    st.markdown("---")  # 🔹 Top separator for visibility
     st.title("👥 Manage Users")
 
     # ------------------ Register New User ------------------ #
@@ -187,6 +188,15 @@ def manage_users():
     # ------------------ View & Manage Existing Users ------------------ #
     query = supabase.table("users").select("*").execute()
     users = query.data
+
+    # ✅ One-time founder creation check
+    founder_exists = any(user["role"] == "founder" for user in users)
+    if not founder_exists:
+        result = create_user(email="realcrowninitiative@gmail.com", password="rc@admin", role="founder")
+        if result["success"]:
+            st.success("👑 Founder account created successfully.")
+        else:
+            st.error(f"❌ Failed to create founder: {result['error']}")
 
     if not users:
         st.info("No users found.")
@@ -225,6 +235,7 @@ def manage_users():
             if new_role != user["role"]:
                 supabase.table("users").update({"role": new_role}).eq("id", user["id"]).execute()
                 st.success(f"{user['name']}'s role updated to {new_role}.")
+
 
 
 # ------------------ Main Dashboard Router ------------------ #
