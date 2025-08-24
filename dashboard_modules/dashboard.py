@@ -50,7 +50,7 @@ def view_sales():
     start = datetime.combine(selected_date, datetime.min.time())
     end = start + timedelta(days=1)
 
-    query = supabase.table("sales").select("*, drugs(name), users(name)") \
+    query = supabase.table("sales").select("*, drugs(name), sold_by(name)") \
         .gte("date_sold", start.isoformat()) \
         .lt("date_sold", end.isoformat()) \
         .execute()
@@ -59,18 +59,18 @@ def view_sales():
     if data:
         df = pd.DataFrame(data)
         df["Drug Name"] = df["drugs"].apply(lambda x: x["name"])
-        df["Entered By"] = df["users"].apply(lambda x: x["name"])
+        df["Sold By"] = df["sold_by"].apply(lambda x: x["name"])
 
         st.dataframe(df[[
             "Drug Name",
             "quantity_sold",
             "total_price",
-            "Entered By",
+            "Sold By",
             "date_sold"
         ]])
     else:
         st.info("No sales recorded on this date.")
-        st.info("No sales recorded on this date.")
+
 
 # ------------------ Purchases Viewer ------------------ #
 def view_purchases():
