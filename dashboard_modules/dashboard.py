@@ -1,4 +1,17 @@
 import streamlit as st
+import pandas as pd
+from supabase import create_client, Client
+
+# ------------------ Supabase Setup ------------------ #
+import os
+from dotenv import load_dotenv
+from supabase import create_client, Client
+
+load_dotenv()
+supabase_url = os.getenv("SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_KEY")
+supabase: Client = create_client(supabase_url, supabase_key)
+
 
 # ------------------ Admin Dashboard ------------------ #
 def admin_dashboard():
@@ -8,6 +21,7 @@ def admin_dashboard():
     - 👥 Manage users  
     - 📦 Oversee inventory  
     - 📊 View system reports  
+    - 🧾 View sales and purchases  
     """)
     st.markdown("---")
 
@@ -19,8 +33,35 @@ def pharmacist_dashboard():
     - 🧾 View prescriptions  
     - 💉 Dispense medications  
     - 📦 Track stock levels  
+    - 🧾 View sales and purchases  
     """)
     st.markdown("---")
+
+# ------------------ Sales Viewer ------------------ #
+def view_sales():
+    st.subheader("🧾 Sales Records")
+    selected_date = st.date_input("Select date to view sales")
+    query = supabase.table("sales").select("*, drugs(name)").eq("date_sold", str(selected_date)).execute()
+    data = query.data
+    if data:
+        df = pd.DataFrame(data)
+        df["Drug Name"] = df["drugs"].apply(lambda x: x["name"])
+        st.dataframe(df[["Drug Name", "quantity_sold", "total_price", "date_sold"]])
+    else:
+        st.info("No sales recorded on this date.")
+
+# ------------------ Purchases Viewer ------------------ #
+def view_purchases():
+    st.subheader("📦 Purchase Records")
+    selected_date = st.date_input("Select date to view purchases")
+    query = supabase.table("purchases").select("*, drugs(name)").eq("created_at", str(selected_date)).execute()
+    data = query.data
+    if data:
+        df = pd.DataFrame(data)
+        df["Drug Name"] = df["drugs"].apply(lambda x: x["name"])
+        st.dataframe(df[["Drug Name", "quantity_purchased", "created_at"]])
+    else:
+        st.info("No purchases recorded on this date.")
 
 # ------------------ Role Check Helper ------------------ #
 def require_login():
@@ -39,7 +80,7 @@ def show_dashboard():
     role = user["role"]
 
     st.sidebar.title("🔍 Navigation")
-    selection = st.sidebar.radio("Choose a section:", ["Dashboard", "Reports", "Inventory"])
+    selection = st.sidebar.radio("Choose a section:", ["Dashboard", "Reports", "Inventory", "Sales", "Purchases"])
 
     if selection == "Dashboard":
         if role == "admin":
@@ -62,6 +103,18 @@ def show_dashboard():
             st.info("Inventory module coming soon... 🚧")
         else:
             st.error("🚫 You do not have permission to view inventory.")
+
+    elif selection == "Sales":
+        if role in ["admin", "pharmacist"]:
+            view_sales()
+        else:
+            st.error("🚫 You do not have permission to view sales.")
+
+    elif selection == "Purchases":
+        if role in ["admin", "pharmacist"]:
+            view_purchases()
+        else:
+            st.error("🚫 You do not have permission to view purchases.")
 
 # ------------------ Entry Point ------------------ #
 def run():
