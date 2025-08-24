@@ -164,7 +164,10 @@ def view_reports():
 # ------------------ Manage Users ------------------ #
 import streamlit as st
 import pandas as pd
-from auth.supabase_client import create_user  # Ensure this import is valid
+from auth.supabase_client import create_user
+from auth.supabase_client import supabase  # ✅ Ensure supabase is accessible
+
+FOUNDER_EMAIL = "your.email@example.com"  # 🔐 Replace with your actual founder email
 
 def manage_users():
     st.title("👥 Manage Users")
@@ -172,16 +175,23 @@ def manage_users():
     # ------------------ Register New User ------------------ #
     st.markdown("### 🆕 Register New User")
     with st.form("register_user_form"):
+        name = st.text_input("Full Name")
         email = st.text_input("Email")
         password = st.text_input("Password", type="password")
-        role = st.selectbox("Role", ["admin", "pharmacist", "cashier", "procurement", "supervisor"])
+        role = st.selectbox("Role", [
+            "admin", "pharmacist", "cashier", "nurse", "midwife",
+            "lab_tech", "doctor", "procurement", "receptionist", "supervisor"
+        ])
         submitted = st.form_submit_button("Register User")
         if submitted:
-            result = create_user(email=email, password=password, role=role)
-            if result["success"]:
-                st.success("✅ User registered successfully.")
+            if not name or not email or not password:
+                st.warning("🚨 All fields are required.")
             else:
-                st.error(f"❌ Registration failed: {result['error']}")
+                result = create_user(name=name, email=email, password=password, role=role)
+                if result["success"]:
+                    st.success("✅ User registered successfully.")
+                else:
+                    st.error(f"❌ Registration failed: {result['error']}")
 
     st.markdown("---")
 
@@ -204,23 +214,36 @@ def manage_users():
             st.write(f"**{user['name']}** ({user['email']}) — *{user['role']}*")
 
         with col2:
-            verify_toggle = st.checkbox("Verified", value=user["verified"], key=f"verify_{user['id']}")
-            if verify_toggle != user["verified"]:
+            verify_toggle = st.checkbox("Verified", value=user.get("verified", False), key=f"verify_{user['id']}")
+            if verify_toggle != user.get("verified", False):
                 supabase.table("users").update({"verified": verify_toggle}).eq("id", user["id"]).execute()
                 st.success(f"{user['name']} verification updated.")
 
         with col3:
-            if st.button("🗑️ Delete", key=f"delete_{user['id']}"):
-                supabase.table("users").delete().eq("id", user["id"]).execute()
-                st.warning(f"{user['name']} deleted.")
+            if user["email"] == FOUNDER_EMAIL:
+                st.warning("🔒 Protected")
+            else:
+                if st.button("🗑️ Delete", key=f"delete_{user['id']}"):
+                    supabase.table("users").delete().eq("id", user["id"]).execute()
+                    st.warning(f"{user['name']} deleted.")
 
         with col4:
-            new_role = st.selectbox("Change Role", ["admin", "pharmacist", "cashier", "procurement", "supervisor"],
-                                    index=["admin", "pharmacist", "cashier", "procurement", "supervisor"].index(user["role"]),
-                                    key=f"role_{user['id']}")
+            new_role = st.selectbox(
+                "Change Role",
+                [
+                    "admin", "pharmacist", "cashier", "nurse", "midwife",
+                    "lab_tech", "doctor", "procurement", "receptionist", "supervisor"
+                ],
+                index=[
+                    "admin", "pharmacist", "cashier", "nurse", "midwife",
+                    "lab_tech", "doctor", "procurement", "receptionist", "supervisor"
+                ].index(user["role"]),
+                key=f"role_{user['id']}"
+            )
             if new_role != user["role"]:
                 supabase.table("users").update({"role": new_role}).eq("id", user["id"]).execute()
                 st.success(f"{user['name']}'s role updated to {new_role}.")
+
 
 
 # ------------------ Main Dashboard Router ------------------ #
