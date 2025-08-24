@@ -21,17 +21,16 @@ def require_login():
 
 # ------------------ Safe Extractors ------------------ #
 def extract_name(obj):
-    try:
-        return obj.get("name", "Unknown") if isinstance(obj, dict) else "Unknown"
-    except Exception:
-        return "Unknown"
+    if isinstance(obj, dict):
+        return obj.get("name", "Unknown")
+    return "Unknown"
 
 # ------------------ Admin Dashboard ------------------ #
 def admin_dashboard():
     st.title("🧑‍⚕️ Admin Dashboard")
     st.markdown("""
     Welcome to the admin dashboard. Here you can:
-    - 👥 Manage users   
+    - 👥 Manage users  
     - 📊 View system reports  
     - 🧾 View sales and purchases  
     """)
@@ -57,26 +56,29 @@ def view_sales():
     start = datetime.combine(selected_date, datetime.min.time())
     end = start + timedelta(days=1)
 
-    query = supabase.table("sales").select("*, drugs(name), sold_by(name)") \
-        .gte("date_sold", start.isoformat()) \
-        .lt("date_sold", end.isoformat()) \
-        .execute()
+    try:
+        query = supabase.table("sales").select("*, drugs(name), sold_by(name)") \
+            .gte("date_sold", start.isoformat()) \
+            .lt("date_sold", end.isoformat()) \
+            .execute()
 
-    data = query.data
-    if data:
-        df = pd.DataFrame(data)
-        df["Drug Name"] = df["drugs"].apply(extract_name)
-        df["Sold By"] = df["sold_by"].apply(extract_name)
+        data = query.data
+        if data:
+            df = pd.DataFrame(data)
+            df["Drug Name"] = df["drugs"].apply(extract_name)
+            df["Sold By"] = df["sold_by"].apply(extract_name)
 
-        st.dataframe(df[[
-            "Drug Name",
-            "quantity_sold",
-            "total_price",
-            "Sold By",
-            "date_sold"
-        ]])
-    else:
-        st.info("No sales recorded on this date.")
+            st.dataframe(df[[
+                "Drug Name",
+                "quantity_sold",
+                "total_price",
+                "Sold By",
+                "date_sold"
+            ]])
+        else:
+            st.info("No sales recorded on this date.")
+    except Exception as e:
+        st.error(f"❌ Failed to load sales: {str(e)}")
 
 # ------------------ Purchases Viewer ------------------ #
 def view_purchases():
@@ -86,26 +88,29 @@ def view_purchases():
     start = datetime.combine(selected_date, datetime.min.time())
     end = start + timedelta(days=1)
 
-    query = supabase.table("purchases").select("*, drugs(name)") \
-        .gte("created_at", start.isoformat()) \
-        .lt("created_at", end.isoformat()) \
-        .execute()
+    try:
+        query = supabase.table("purchases").select("*, drugs(name)") \
+            .gte("created_at", start.isoformat()) \
+            .lt("created_at", end.isoformat()) \
+            .execute()
 
-    data = query.data
-    if data:
-        df = pd.DataFrame(data)
-        df["Drug Name"] = df["drugs"].apply(extract_name)
-        df["Total Cost"] = df["quantity_purchased"] * df["unit_cost"]
+        data = query.data
+        if data:
+            df = pd.DataFrame(data)
+            df["Drug Name"] = df["drugs"].apply(extract_name)
+            df["Total Cost"] = df["quantity_purchased"] * df["unit_cost"]
 
-        st.dataframe(df[[
-            "Drug Name",
-            "quantity_purchased",
-            "unit_cost",
-            "Total Cost",
-            "created_at"
-        ]])
-    else:
-        st.info("No purchases recorded on this date.")
+            st.dataframe(df[[
+                "Drug Name",
+                "quantity_purchased",
+                "unit_cost",
+                "Total Cost",
+                "created_at"
+            ]])
+        else:
+            st.info("No purchases recorded on this date.")
+    except Exception as e:
+        st.error(f"❌ Failed to load purchases: {str(e)}")
 
 # ------------------ Summary Reports ------------------ #
 def view_reports():
@@ -127,57 +132,53 @@ def view_reports():
     elif report_type == "Monthly":
         selected_month = st.date_input("Select any date in the month")
         start = datetime(selected_month.year, selected_month.month, 1)
-        if selected_month.month == 12:
-            end = datetime(selected_month.year + 1, 1, 1)
-        else:
-            end = datetime(selected_month.year, selected_month.month + 1, 1)
+        end = datetime(selected_month.year + (selected_month.month // 12), (selected_month.month % 12) + 1, 1)
         label = selected_month.strftime("%B %Y")
 
-    # 🔹 Fetch Sales
-    sales_query = supabase.table("sales").select("total_price") \
-        .gte("date_sold", start.isoformat()) \
-        .lt("date_sold", end.isoformat()) \
-        .execute()
-    sales_data = sales_query.data
-    total_sales = sum(item["total_price"] for item in sales_data) if sales_data else 0
+    try:
+        # 🔹 Fetch Sales
+        sales_query = supabase.table("sales").select("total_price") \
+            .gte("date_sold", start.isoformat()) \
+            .lt("date_sold", end.isoformat()) \
+            .execute()
+        sales_data = sales_query.data
+        total_sales = sum(item["total_price"] for item in sales_data) if sales_data else 0
 
-    # 🔹 Fetch Purchases
-    purchase_query = supabase.table("purchases").select("quantity_purchased", "unit_cost") \
-        .gte("created_at", start.isoformat()) \
-        .lt("created_at", end.isoformat()) \
-        .execute()
-    purchase_data = purchase_query.data
-    total_purchases = sum(item["quantity_purchased"] * item["unit_cost"] for item in purchase_data) if purchase_data else 0
+        # 🔹 Fetch Purchases
+        purchase_query = supabase.table("purchases").select("quantity_purchased", "unit_cost") \
+            .gte("created_at", start.isoformat()) \
+            .lt("created_at", end.isoformat()) \
+            .execute()
+        purchase_data = purchase_query.data
+        total_purchases = sum(item["quantity_purchased"] * item["unit_cost"] for item in purchase_data) if purchase_data else 0
 
-    # 📋 Display Summary
-    st.markdown(f"### 📅 Summary for {label}")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("💰 Total Sales", f"UGX {total_sales:,.0f}")
-    with col2:
-        st.metric("📦 Total Purchases", f"UGX {total_purchases:,.0f}")
+        # 📋 Display Summary
+        st.markdown(f"### 📅 Summary for {label}")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("💰 Total Sales", f"UGX {total_sales:,.0f}")
+        with col2:
+            st.metric("📦 Total Purchases", f"UGX {total_purchases:,.0f}")
 
-    net = total_sales - total_purchases
-    st.markdown("---")
-    st.metric("📊 Net Flow (Sales - Purchases)", f"UGX {net:,.0f}", delta=net)
+        net = total_sales - total_purchases
+        st.markdown("---")
+        st.metric("📊 Net Flow (Sales - Purchases)", f"UGX {net:,.0f}", delta=net)
+    except Exception as e:
+        st.error(f"❌ Failed to load report: {str(e)}")
 
 # ------------------ Manage Users ------------------ #
-
-import streamlit as st
-import pandas as pd
-from datetime import datetime
-from auth.supabase_client import supabase, hash_password  # Ensure these are exposed
-from utils.auth_helpers import require_admin  # Adjust path as needed
-
 def manage_users(auth_mode="Register"):
     st.title("👥 Manage Users")
 
-    # ------------------ Register New User ------------------ #
     if auth_mode == "Register":
         st.subheader("📝 User Registration")
 
-        if not require_admin():
-            st.error("🔐 Admin access required to register users.")
+        try:
+            if not require_admin():
+                st.error("🔐 Admin access required to register users.")
+                st.stop()
+        except Exception as e:
+            st.error(f"⚠️ Admin check failed: {str(e)}")
             st.stop()
 
         st.markdown("Register a new user with secure credentials and role assignment.")
@@ -192,13 +193,13 @@ def manage_users(auth_mode="Register"):
             if not name or not email or not password:
                 st.warning("⚠️ Please fill in all fields.")
             else:
-                hashed_pw = hash_password(password)
+                try:
+                    hashed_pw = hash_password(password)
 
-                existing = supabase.table("users").select("id").eq("email", email).execute().data
-                if existing:
-                    st.error("❌ Email already registered.")
-                else:
-                    try:
+                    existing = supabase.table("users").select("id").eq("email", email).execute().data
+                    if existing:
+                        st.error("❌ Email already registered.")
+                    else:
                         supabase.table("users").insert({
                             "name": name,
                             "email": email,
@@ -207,7 +208,6 @@ def manage_users(auth_mode="Register"):
                             "verified": False
                         }).execute()
 
-                        # 🔍 Audit Log
                         supabase.table("audit_logs").insert({
                             "action": "register_user",
                             "performed_by": st.session_state["user"]["email"],
@@ -216,12 +216,16 @@ def manage_users(auth_mode="Register"):
                         }).execute()
 
                         st.success("✅ Registration successful! You can now log in.")
-                    except Exception as e:
-                        st.error(f"❌ Registration failed: {str(e)}")
-                        
+                except Exception as e:
+                    st.error(f"❌ Registration failed: {str(e)}")
+
     # ------------------ View & Manage Existing Users ------------------ #
-    query = supabase.table("users").select("*").execute()
-    users = query.data
+    try:
+        query = supabase.table("users").select("*").execute()
+        users = query.data
+    except Exception as e:
+        st.error(f"❌ Failed to load users: {str(e)}")
+        return
 
     if not users:
         st.info("No users found.")
@@ -256,14 +260,13 @@ def manage_users(auth_mode="Register"):
                 supabase.table("users").update({"role": new_role}).eq("id", user["id"]).execute()
                 st.success(f"{user['name']}'s role updated to {new_role}.")
 
-
 # ------------------ Main Dashboard Router ------------------ #
 def show_dashboard():
     user = require_login()
     if not user:
         return
 
-    role = user["role"]
+    role = user.get("role", "unknown")
 
     st.sidebar.title("🔍 Navigation")
     if role == "admin":
