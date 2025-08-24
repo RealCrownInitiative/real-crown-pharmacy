@@ -11,15 +11,16 @@ import auth_app
 import add_drug_app
 import record_sale_app
 import record_purchase_app
-import summary_dashboard  # If you're using this instead of dashboard.summary
+import summary_dashboard  # Or use summary.run() if preferred
 
 def run():
     st.set_page_config(page_title="Real Crown Pharmacy", layout="wide")
 
+    # 🏷️ Branding Header
     st.title("💊 Real Crown Pharmacy Management System")
     st.markdown("Welcome to the central dashboard. Choose an action below:")
 
-    # Navigation options
+    # 📂 Navigation options
     option = st.selectbox("📂 Select Module", [
         "Login",
         "Dashboard",
@@ -30,7 +31,7 @@ def run():
         "Summary"
     ])
 
-    # Helper functions
+    # 🔐 Login and Role Checks
     def require_login():
         if "user" not in st.session_state:
             st.warning("🔐 Please log in to access this section.")
@@ -46,13 +47,13 @@ def run():
             return False
         return True
 
-    # Route to selected module
+    # 🚀 Route to selected module
     if option == "Login":
         auth_app.run()
 
     elif option == "Dashboard":
         if require_role(["admin", "supervisor"]):
-            dashboard.run()
+            dashboard.run()  # ✅ This now reflects your updated dashboard.py logic
 
     elif option == "Add Drug":
         if require_role(["pharmacist", "admin"]):
@@ -72,7 +73,7 @@ def run():
 
     elif option == "Summary":
         if require_role(["admin", "supervisor"]):
-            summary_dashboard.run()  # Or use summary.run() if you're using dashboard/summary.py
+            summary_dashboard.run()
 
     # 📌 Footer with branding
     st.markdown("---")
@@ -86,6 +87,6 @@ def run():
     </div>
     """, unsafe_allow_html=True)
 
-# Run immediately if this is the main file
+# 🏁 Run immediately if this is the main file
 if __name__ == "__main__":
     run()
