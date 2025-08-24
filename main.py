@@ -22,16 +22,25 @@ def run():
     st.markdown("Welcome to the central dashboard. Choose an action below:")
 
     # 📂 Navigation options
+    modules = [
+        "Home",
+        "Dashboard",
+        "Add Drug",
+        "Record Sale",
+        "Record Purchase",
+        "Inventory",
+        "Summary"
+    ]
+
     if "user" in st.session_state:
-        option = st.selectbox("📂 Select Module", [
-            "Home",
-            "Dashboard",
-            "Add Drug",
-            "Record Sale",
-            "Record Purchase",
-            "Inventory",
-            "Summary"
-        ])
+        # ✅ Redirect to Home after login
+        if st.session_state.get("redirect_to_home", False):
+            st.session_state["redirect_to_home"] = False
+            st.session_state["option"] = "Home"
+
+        default_option = st.session_state.get("option", "Home")
+        option = st.selectbox("📂 Select Module", modules, index=modules.index(default_option))
+        st.session_state["option"] = option
     else:
         option = "Login"
 
@@ -54,9 +63,11 @@ def run():
     # 🚀 Route to selected module
     if option == "Login":
         auth_app.run()
+
+        # ✅ Set redirect flag after successful login
         if "user" in st.session_state:
-            st.success("✅ Login successful! Redirecting to Home...")
-            st.experimental_rerun()
+            st.success("✅ Login successful! Loading Home...")
+            st.session_state["redirect_to_home"] = True
 
     elif option == "Home":
         if require_login():
