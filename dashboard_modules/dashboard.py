@@ -3,6 +3,7 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
+from datetime import datetime, timedelta
 
 # ------------------ Supabase Setup ------------------ #
 load_dotenv()
@@ -42,11 +43,19 @@ def pharmacist_dashboard():
     """)
     st.markdown("---")
 
-# ------------------ Sales Viewer ------------------ #
+# ------------------ Sales Viewer (Fixed Date Filtering) ------------------ #
 def view_sales():
     st.subheader("🧾 Sales Records")
     selected_date = st.date_input("Select date to view sales")
-    query = supabase.table("sales").select("*, drugs(name)").eq("date_sold", str(selected_date)).execute()
+
+    start = datetime.combine(selected_date, datetime.min.time())
+    end = start + timedelta(days=1)
+
+    query = supabase.table("sales").select("*, drugs(name)") \
+        .gte("date_sold", start.isoformat()) \
+        .lt("date_sold", end.isoformat()) \
+        .execute()
+
     data = query.data
     if data:
         df = pd.DataFrame(data)
@@ -59,7 +68,15 @@ def view_sales():
 def view_purchases():
     st.subheader("📦 Purchase Records")
     selected_date = st.date_input("Select date to view purchases")
-    query = supabase.table("purchases").select("*, drugs(name)").eq("created_at", str(selected_date)).execute()
+
+    start = datetime.combine(selected_date, datetime.min.time())
+    end = start + timedelta(days=1)
+
+    query = supabase.table("purchases").select("*, drugs(name)") \
+        .gte("created_at", start.isoformat()) \
+        .lt("created_at", end.isoformat()) \
+        .execute()
+
     data = query.data
     if data:
         df = pd.DataFrame(data)
@@ -78,7 +95,7 @@ def show_dashboard():
 
     st.sidebar.title("🔍 Navigation")
     selection = st.sidebar.radio("Choose a section:", [
-        "Dashboard", "Reports", "Inventory", "Sales", "Purchases"
+        "Dashboard", "Reports", "Sales", "Purchases"
     ])
 
     if selection == "Dashboard":
@@ -95,13 +112,6 @@ def show_dashboard():
             st.info("Report module coming soon... 🚧")
         else:
             st.error("🚫 You do not have permission to view reports.")
-
-    elif selection == "Inventory":
-        if role in ["admin", "pharmacist"]:
-            st.title("📦 Inventory")
-            st.info("Inventory module coming soon... 🚧")
-        else:
-            st.error("🚫 You do not have permission to view inventory.")
 
     elif selection == "Sales":
         if role in ["admin", "pharmacist"]:
