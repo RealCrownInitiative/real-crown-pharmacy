@@ -23,12 +23,9 @@ def run():
     st.title("💊 RCCLINIC PMS")
 
     # ------------------ Session Initialization ------------------ #
-    if "user" not in st.session_state:
-        st.session_state.user = None
-    if "option" not in st.session_state:
-        st.session_state.option = "Login"
-    if "redirect_to_home" not in st.session_state:
-        st.session_state.redirect_to_home = False
+    st.session_state.setdefault("user", None)
+    st.session_state.setdefault("option", "Login")
+    st.session_state.setdefault("redirect_to_home", False)
 
     # ------------------ Navigation Modules ------------------ #
     modules = [
@@ -64,7 +61,8 @@ def run():
         if not require_login():
             return False
         user = st.session_state.user
-        if user["role"] not in allowed_roles:
+        role = user.get("role") if user else None
+        if role not in allowed_roles:
             st.error("🚫 You do not have permission to access this section.")
             return False
         return True
@@ -77,7 +75,7 @@ def run():
         if st.session_state.user and not st.session_state.redirect_to_home:
             st.success("✅ Login successful! Redirecting to Home...")
             st.session_state.redirect_to_home = True
-            st.stop()
+            st.experimental_rerun()
 
     elif option == "Home":
         if require_login():
@@ -116,7 +114,7 @@ def run():
         st.session_state.option = "Home"
         st.experimental_rerun()
 
-    # ------------------ Logout Button (Moved Below) ------------------ #
+    # ------------------ Logout Button ------------------ #
     if st.session_state.user:
         st.markdown("---")
         if st.button("🔓 Logout"):
